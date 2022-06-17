@@ -10,14 +10,14 @@ plugins {
 }
 
 dependencies {
-    implementation 'org.kordamp.ikonli:ikonli-javafx:12.3.1'
     implementation project(':utilities')
 }
 
+
 javafx {
+    version = "18"
     modules = [ 'javafx.controls', 'javafx.fxml' ]
 }
-
 
 application {
     // Define the main class for the application.
