@@ -12,78 +12,96 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.input.MouseEvent;
 import javafx.stage.FileChooser;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 
 /**
  * JavaFX Controller of GOLApp.
  */
 public class GOLAppController {
-
+    /**
+     * Application window width.
+     */
     public static final int WIDTH = 600;
+    /**
+     * Application window height.
+     */
     public static final int HEIGHT = 600;
+    private final Controller<ConwayState, GridCoordinates> controller = Controller.getConwayController();
+    /**
+     * Locking object for evolution animation.
+     */
+    private Object animationLock;
+    /**
+     * Boolean flag for animating.
+     */
+    private boolean animating;
+    /**
+     * Thread used for evolution animation.
+     */
+    private Thread animationThread;
     @FXML
     private AnchorPane fieldArea;
-
     @FXML
     private Button openButton;
-
     @FXML
     private Button clearButton;
-
     @FXML
     private Button saveButton;
-
     @FXML
     private Button zoomInButton;
-
     @FXML
     private Button zoomOutButton;
-
     @FXML
     private Button scrollLeftButton;
-
     @FXML
     private Button scrollRightButton;
-
     @FXML
     private Button scrollUpButton;
-
     @FXML
     private Button scrollDownButton;
-
     @FXML
     private Button stepForwardButton;
-
     @FXML
     private Button stepBackwardButton;
-
-
     private Rectangle[][] rectangles;
-
     private int row = 50;
     private int columns = 50;
     private int cellSize = 30;
-
     private int firstRow = 0;
-
     private int firstColumn = 0;
-
-    private final Controller<ConwayState, GridCoordinates> controller = Controller.getConwayController();
 
     /**
      * Method used to initialize this controller. This method is invoked by JavaFX.
      */
     public void initialize() {
         drawFieldArea();
+        this.animationLock = new Object();
+        this.animating = false;
+        this.animationThread = new Thread(() -> {
+            while (true) {
+                if (this.animating) {
+                    this.controller.stepForward();
+                    this.refreshCells();
+                }
+                try {
+                    Thread.sleep(125);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        });
+        this.animationThread.start();
     }
 
     /**
@@ -91,15 +109,15 @@ public class GOLAppController {
      * Moreover, rectangle in position (i,j) will be used the cell in position (i+firstRow, j+firstColumn).
      */
     private void drawFieldArea() {
-        row = 1+HEIGHT/cellSize;
-        columns = 1+WIDTH/cellSize;
+        row = 1 + HEIGHT / cellSize;
+        columns = 1 + WIDTH / cellSize;
         rectangles = new Rectangle[row][columns];
-        for(int i=0; i<row; i++) {
-            for(int j=0; j<columns; j++) {
+        for (int i = 0; i < row; i++) {
+            for (int j = 0; j < columns; j++) {
                 rectangles[i][j] = getCellAt(i, j);
             }
         }
-        fieldArea.setMinSize(cellSize*columns, cellSize*row);
+        fieldArea.setMinSize(cellSize * columns, cellSize * row);
     }
 
     /**
@@ -110,10 +128,10 @@ public class GOLAppController {
      * @return the rectangle representing the cell at position (i,j).
      */
     private Rectangle getCellAt(int i, int j) {
-        Rectangle rect = new Rectangle(i*cellSize, j*cellSize, cellSize, cellSize);
+        Rectangle rect = new Rectangle(i * cellSize, j * cellSize, cellSize, cellSize);
         rect.setStroke(Color.BLACK);
         rect.setStrokeWidth(1);
-        rect.setFill(getColorOf(controller.getStateOf(getCoordinates(i,j))));
+        rect.setFill(getColorOf(controller.getStateOf(getCoordinates(i, j))));
         fieldArea.getChildren().add(rect);
         rect.setOnMouseClicked(clickOnCell(i, j));
         return rect;
@@ -147,12 +165,13 @@ public class GOLAppController {
 
     /**
      * Returns the grid coordinates associated with the rectangle at (i,j).
+     *
      * @param i rectangle row.
      * @param j rectangle column.
      * @return the grid coordinates associated with the rectangle at (i,j).
      */
     private GridCoordinates getCoordinates(int i, int j) {
-        return new GridCoordinates(i+firstRow, j+firstColumn);
+        return new GridCoordinates(i + firstRow, j + firstColumn);
     }
 
     /**
@@ -178,8 +197,7 @@ public class GOLAppController {
     private void onSaveCommand(Event event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save GOL File");
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("GOL Files", "*.gol"));
+        fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("GOL Files", "*.gol"));
         File selectedFile = fileChooser.showSaveDialog(((Node) event.getSource()).getScene().getWindow());
         if (selectedFile != null) {
             try {
@@ -202,10 +220,7 @@ public class GOLAppController {
     private void onOpenCommand(Event event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open GOL File");
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("GOL Files", "*.gol"),
-                new FileChooser.ExtensionFilter("Txt Files", "*.txt"),
-                new FileChooser.ExtensionFilter("All Files", "*.*"));
+        fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("GOL Files", "*.gol"), new FileChooser.ExtensionFilter("Txt Files", "*.txt"), new FileChooser.ExtensionFilter("All Files", "*.*"));
         File selectedFile = fileChooser.showOpenDialog(((Node) event.getSource()).getScene().getWindow());
         if (selectedFile != null) {
             try {
@@ -291,7 +306,6 @@ public class GOLAppController {
     }
 
 
-
     /**
      * This is the method invoked to handle key events.
      *
@@ -356,10 +370,14 @@ public class GOLAppController {
      * This method is used to zoom in the observed cells, namely to increase the number of cells depicted in the interface.
      */
     private void zoomIn() {
-        if (cellSize<50) {
-            cellSize += 5;
-            removeAllCells();
-            drawFieldArea();
+        synchronized (this.animationLock) {
+            this.animating = !this.animating;
+            if (cellSize < 50) {
+                cellSize += 5;
+                removeAllCells();
+                drawFieldArea();
+            }
+            this.animating = !this.animating;
         }
     }
 
@@ -367,10 +385,14 @@ public class GOLAppController {
      * This method is used to zoom out the observed cells, namely to increase the cells size.
      */
     private void zoomOut() {
-        if (cellSize>15) {
-            cellSize -= 5;
-            removeAllCells();
-            drawFieldArea();
+        synchronized (this.animationLock) {
+            this.animating = !this.animating;
+            if (cellSize > 15) {
+                cellSize -= 5;
+                removeAllCells();
+                drawFieldArea();
+            }
+            this.animating = !this.animating;
         }
     }
 
@@ -378,7 +400,7 @@ public class GOLAppController {
      * Remove all the elements from the view.
      */
     private void removeAllCells() {
-        for (Rectangle[] row: rectangles) {
+        for (Rectangle[] row : rectangles) {
             fieldArea.getChildren().removeAll(row);
         }
     }
@@ -387,8 +409,8 @@ public class GOLAppController {
      * Repaint all the cells.
      */
     private void refreshCells() {
-        for(int i=0; i<row; i++) {
-            for(int j=0; j<columns; j++) {
+        for (int i = 0; i < row; i++) {
+            for (int j = 0; j < columns; j++) {
                 rectangles[i][j].setFill(getColorOf(controller.getStateOf(getCoordinates(i, j))));
             }
         }
@@ -414,5 +436,29 @@ public class GOLAppController {
     public void onStepBackwardCommand(Event event) {
         controller.stepBackward();
         refreshCells();
+    }
+
+    /**
+     * This method is invoked to start and stop animating the evolution steps.
+     *
+     * @param event the triggering event.
+     */
+    @FXML
+    public void onStepForwardHotCommand(Event event) {
+        synchronized (this.animationLock) {
+            this.animating = !this.animating;
+            this.clearButton.setDisable(this.animating);
+            this.saveButton.setDisable(this.animating);
+            this.openButton.setDisable(this.animating);
+            this.stepBackwardButton.setDisable(this.animating);
+            this.stepForwardButton.setDisable(this.animating);
+        }
+    }
+
+    /**
+     * Application shutdown hook (within controller instead of Runtime shutdown hook).
+     */
+    public void shutdown() {
+        this.animationThread.interrupt();
     }
 }
