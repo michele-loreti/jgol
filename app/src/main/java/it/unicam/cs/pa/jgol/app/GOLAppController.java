@@ -10,7 +10,6 @@ import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
@@ -21,8 +20,6 @@ import javafx.stage.FileChooser;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
 
 
 /**
@@ -313,23 +310,14 @@ public class GOLAppController {
      */
     @FXML
     private void onKeyPressed(KeyEvent event) {
-        if (event.getCode() == KeyCode.LEFT) {
-            scrollLeft();
-        }
-        if (event.getCode() == KeyCode.RIGHT) {
-            scrollRight();
-        }
-        if (event.getCode() == KeyCode.UP) {
-            scrollUp();
-        }
-        if (event.getCode() == KeyCode.DOWN) {
-            scrollDown();
-        }
-        if (event.getCode() == KeyCode.PLUS) {
-            zoomIn();
-        }
-        if (event.getCode() == KeyCode.MINUS) {
-            zoomOut();
+        switch (event.getCode()) {
+            case LEFT -> scrollLeft();
+            case RIGHT -> scrollRight();
+            case UP -> scrollUp();
+            case DOWN -> scrollDown();
+            case PAGE_UP -> zoomIn();
+            case PAGE_DOWN -> zoomOut();
+            case S -> animate();
         }
         refreshCells();
     }
@@ -417,6 +405,20 @@ public class GOLAppController {
     }
 
     /**
+     * Start/stop animating.
+     */
+    private void animate() {
+        synchronized (this.animationLock) {
+            this.animating = !this.animating;
+            this.clearButton.setDisable(this.animating);
+            this.saveButton.setDisable(this.animating);
+            this.openButton.setDisable(this.animating);
+            this.stepBackwardButton.setDisable(this.animating);
+            this.stepForwardButton.setDisable(this.animating);
+        }
+    }
+
+    /**
      * This method is invoked to perform one evolution step.
      *
      * @param event the triggering event.
@@ -445,14 +447,7 @@ public class GOLAppController {
      */
     @FXML
     public void onStepForwardHotCommand(Event event) {
-        synchronized (this.animationLock) {
-            this.animating = !this.animating;
-            this.clearButton.setDisable(this.animating);
-            this.saveButton.setDisable(this.animating);
-            this.openButton.setDisable(this.animating);
-            this.stepBackwardButton.setDisable(this.animating);
-            this.stepForwardButton.setDisable(this.animating);
-        }
+        animate();
     }
 
     /**

@@ -34,7 +34,7 @@ public class App extends Application {
      * Stop method for JavaFX application.
      */
     @Override
-    public void stop(){
+    public void stop() {
         Thread.currentThread().interrupt();
         System.exit(0);
     }
