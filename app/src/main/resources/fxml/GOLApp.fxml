@@ -114,6 +114,15 @@
                   </ImageView>
                </graphic>
             </Button>
+            <Button  fx:id="stepForwardHotButton" mnemonicParsing="false" onAction="#onStepForwardHotCommand">
+               <graphic>
+                  <ImageView fitHeight="30.0" fitWidth="30.0" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image url="@../images/Step-Forward-Hot-icon.png" />
+                     </image>
+                  </ImageView>
+               </graphic>
+            </Button>
          </children>
          <padding>
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

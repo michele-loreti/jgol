@@ -8,25 +8,35 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 import java.util.Objects;
 
 public class App extends Application {
 
+    public static void main(String[] args) {
+        launch(args);
+    }
+
     @Override
-    public void start(Stage primaryStage) throws Exception{
-        Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("/fxml/GOLApp.fxml")));
+    public void start(Stage primaryStage) throws Exception {
+        FXMLLoader loader = new FXMLLoader(Objects.requireNonNull(getClass().getResource("/fxml/GOLApp.fxml")));
+        Parent root = loader.load();
         primaryStage.setTitle("GOL App");
         primaryStage.setScene(new Scene(root, GOLAppController.WIDTH, GOLAppController.HEIGHT));
         primaryStage.setResizable(false);
+        GOLAppController controller = loader.getController();
+        primaryStage.setOnCloseRequest(e -> controller.shutdown());
         primaryStage.show();
     }
 
-
-    public static void main(String[] args) {
-        launch(args);
+    /**
+     * Stop method for JavaFX application.
+     */
+    @Override
+    public void stop() {
+        Thread.currentThread().interrupt();
+        System.exit(0);
     }
 
 }
